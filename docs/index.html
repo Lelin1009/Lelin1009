@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>수석 안내판 제작기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@500&display=swap" />
+  <script type="module" crossorigin src="./assets/index-BXjpQDpf.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Dqn2b3Vm.css">
+</head>
+<body>
+  <header class="top">
+    <div class="top-in">
+      <h1>수석 안내판 제작기</h1>
+      <p>순천세계수석박물관 · 1200 × 1800</p>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel" aria-label="입력">
+      <div class="group">
+        <h2>1. 사진</h2>
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept="image/*" />
+          <span class="drop-main">사진 선택</span>
+          <span class="drop-sub">또는 여기에 끌어다 놓기 · 자동으로 누끼를 땁니다</span>
+        </label>
+        <div class="status" id="status" hidden>
+          <div class="status-row"><span id="status-text">준비 중…</span><span id="status-pct"></span></div>
+          <div class="bar"><div class="bar-fill" id="bar"></div></div>
+        </div>
+        <div class="row-btns" id="cut-btns" hidden>
+          <button type="button" class="btn" id="btn-edit">누끼 수정 (지우개·복원)</button>
+          <button type="button" class="btn ghost" id="btn-recut">누끼 다시 따기</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>2. 이름</h2>
+        <label class="field">
+          <span>한국어 제목 <em>크게</em></span>
+          <input id="title" type="text" autocomplete="off" value="안개낀 첩첩산중" />
+        </label>
+        <label class="field">
+          <span>영어 제목 <em>작게</em></span>
+          <textarea id="en" rows="1" autocomplete="off">Misty Layered Mountains</textarea>
+        </label>
+        <label class="field">
+          <span>중국어 제목 <em>작게</em></span>
+          <textarea id="zh" rows="1" autocomplete="off">云雾缭绕的重峦叠嶂</textarea>
+        </label>
+        <p class="hint">영어와 중국어는 <b>English / 中文</b> 한 줄로 들어가고, 길면 자동으로 여러 줄로 나뉩니다. 원하는 곳에서 줄을 바꾸려면 Enter를 누르세요. 글자는 정해진 구역 안에서만 작아지고 사진 영역은 침범하지 않습니다.</p>
+      </div>
+
+      <div class="group">
+        <h2>3. 정보</h2>
+        <div class="two">
+          <label class="field">
+            <span>산지</span>
+            <input id="origin" type="text" autocomplete="off" value="한국" />
+          </label>
+          <label class="field">
+            <span>규격</span>
+            <input id="size" type="text" inputmode="text" autocomplete="off" value="380*370*140" />
+          </label>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>4. 저장</h2>
+        <label class="check"><input type="checkbox" id="zones" /> 미리보기에 구역 표시 (저장 이미지에는 안 나옴)</label>
+        <div class="row-btns">
+          <button type="button" class="btn primary" id="btn-save">PNG로 저장</button>
+          <button type="button" class="btn" id="btn-share" hidden>사진 앱에 저장 / 공유</button>
+        </div>
+        <button type="button" class="btn ghost wide" id="btn-new">새 수석 시작 (입력 비우기)</button>
+      </div>
+    </section>
+
+    <section class="preview" aria-label="미리보기">
+      <div class="poster-wrap">
+        <canvas id="poster" width="1200" height="1800"></canvas>
+        <div class="empty" id="empty">사진을 선택하면 여기에 수석이 들어갑니다</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="editor" id="editor" hidden>
+    <div class="ed-bar">
+      <div class="seg" role="group" aria-label="도구">
+        <button type="button" data-mode="erase" class="on">지우개</button>
+        <button type="button" data-mode="restore">복원</button>
+        <button type="button" data-mode="pan">이동</button>
+      </div>
+      <label class="slider">브러시 <input type="range" id="ed-brush" min="0.5" max="12" step="0.5" value="3" /></label>
+      <label class="slider">확대 <input type="range" id="ed-zoom" min="1" max="5" step="0.25" value="1" /></label>
+      <div class="ed-actions">
+        <button type="button" class="btn" id="ed-undo">되돌리기</button>
+        <button type="button" class="btn ghost" id="ed-reset">AI 결과로</button>
+        <button type="button" class="btn ghost" id="ed-all">원본 전체</button>
+        <button type="button" class="btn primary" id="ed-done">완료</button>
+      </div>
+    </div>
+    <p class="ed-hint">빨간 원 = 지우개, 초록 원 = 복원. 흐리게 보이는 부분은 지워진 배경입니다. 확대한 뒤에는 ‘이동’으로 화면을 옮기세요.</p>
+    <div class="ed-stage"><canvas id="ed-canvas"></canvas></div>
+  </div>
+
+</body>
+</html>
