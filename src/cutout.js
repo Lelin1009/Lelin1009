@@ -13,8 +13,26 @@ function getPublicPath() {
   return publicPathPromise;
 }
 
+async function decode(file) {
+  try {
+    return await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch {
+    // 옵션을 지원하지 않는 구형 브라우저 → <img> 로 열기 (회전 정보는 브라우저가 적용)
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      return img;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+}
+
 export async function loadImageToCanvas(file) {
-  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  const bmp = await decode(file);
+  if (!bmp.width || !bmp.height) throw new Error('empty image');
   const s = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
   const c = document.createElement('canvas');
   c.width = Math.round(bmp.width * s);
@@ -54,8 +72,9 @@ export async function autoMask(src, onProgress) {
 
 /** 원본 + 마스크 → 배경이 투명한 사진 */
 export function composite(src, mask, out = document.createElement('canvas')) {
-  out.width = src.width;
-  out.height = src.height;
+  // 크기가 같으면 다시 할당하지 않음 (브러시로 그릴 때 매번 호출되므로)
+  if (out.width !== src.width) out.width = src.width;
+  if (out.height !== src.height) out.height = src.height;
   const ctx = out.getContext('2d', { willReadFrequently: true });
   ctx.globalCompositeOperation = 'copy';
   ctx.drawImage(src, 0, 0);
@@ -97,10 +116,10 @@ export class MaskEditor {
     this.view.addEventListener('pointerleave', () => { this.cursor = null; this.paint(); });
   }
 
-  open(src, mask) {
+  open(src, mask, aiMask = mask) {
     this.src = src;
     this.mask = cloneCanvas(mask);
-    this.initial = cloneCanvas(mask);
+    this.initial = cloneCanvas(aiMask); // "AI 결과로" = 처음 자동 누끼 결과
     this.undoStack = [];
     this.view.width = src.width;
     this.view.height = src.height;
@@ -138,6 +157,8 @@ export class MaskEditor {
   }
 
   down(e) {
+    // 두 번째 손가락 등은 무시 (선이 엉뚱하게 이어지는 것 방지)
+    if (!e.isPrimary || this.drawing) return;
     e.preventDefault();
     this.view.setPointerCapture(e.pointerId);
     this.drawing = true;
@@ -152,6 +173,7 @@ export class MaskEditor {
   }
 
   move(e) {
+    if (!e.isPrimary) return;
     if (this.mode === 'pan') {
       if (this.drawing && this.panStart) {
         this.wrap.scrollLeft = this.panStart.sl - (e.clientX - this.panStart.x);
@@ -167,7 +189,9 @@ export class MaskEditor {
     } else this.paint();
   }
 
-  up() {
+  up(e) {
+    if (e && !e.isPrimary) return;
+    if (!this.drawing) return;
     this.drawing = false;
     this.panStart = null;
     if (this.mode === 'pan') this.view.style.cursor = 'grab';
