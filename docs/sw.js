@@ -1,6 +1,6 @@
 // 서비스 워커: 한 번 연 뒤에는 인터넷 없이도 앱이 열리게 저장해 둡니다.
 // 버전과 미리 저장할 파일 목록은 빌드할 때 vite.config.js 가 채워 넣습니다.
-const VERSION = '88b0905f4f';
+const VERSION = '7354e83db7';
 const APP_CACHE = `app-${VERSION}`;
 const MODEL_CACHE = 'bgdata-1.4.5'; // AI 모델(약 100MB)은 버전이 바뀔 때만 새로 받음
 const FONT_CACHE = 'fonts-v1';
@@ -11,8 +11,8 @@ const PRECACHE = [
   "icons/icon-512.png",
   "icons/apple-touch-icon.png",
   "assets/template-BHE8l9bY.jpg",
-  "assets/Pretendard-Bold-BYNivUXw.woff2",
   "assets/Pretendard-SemiBold-ClEDdoZU.woff2",
+  "assets/Pretendard-Bold-BYNivUXw.woff2",
   "assets/index-DPIkFLNW.css",
   "assets/index-BmVtIE_f.js",
   "assets/index-BbEvJ2VA.js",
