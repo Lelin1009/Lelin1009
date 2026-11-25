@@ -259,5 +259,52 @@ autoGrow();
 schedule();
 document.fonts.ready.then(schedule);
 
+// ---------- 앱(홈 화면 설치) ----------
+const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+// 오프라인 저장소(서비스 워커): 한 번 연 뒤에는 인터넷 없이도 열림 (배포판에서만)
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('서비스 워커 등록 실패', e));
+}
+// AI 모델(약 100MB)을 브라우저가 임의로 지우지 않도록 요청
+navigator.storage?.persist?.().catch(() => {});
+
+// 아이폰: 앱 안에서는 '다운로드'가 불편하므로 '사진 앱에 저장'을 주 버튼으로
+if (isIOS && !$('#btn-share').hidden) {
+  $('#btn-share').classList.add('primary');
+  $('#btn-save').classList.remove('primary');
+  $('#btn-share').parentElement.prepend($('#btn-share'));
+}
+
+const installBox = $('#install');
+const dismissed = (() => { try { return localStorage.getItem('installDismissed') === '1'; } catch { return false; } })();
+$('#btn-install-close').addEventListener('click', () => {
+  installBox.hidden = true;
+  try { localStorage.setItem('installDismissed', '1'); } catch { /* 무시 */ }
+});
+
+if (!isStandalone && !dismissed) {
+  if (isIOS) {
+    // 아이폰/아이패드는 Safari의 공유 버튼으로만 설치 가능
+    $('#install-msg').innerHTML =
+      'Safari 아래쪽 <svg class="share-ico" width="16" height="18" viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 11V1M4.5 4.5 8 1l3.5 3.5M3 7H1.8v10h12.4V7H13"/></svg> <b>공유</b> 버튼 → <b>홈 화면에 추가</b>를 누르세요.';
+    installBox.hidden = false;
+  }
+  // 안드로이드·PC 크롬/엣지: 설치 버튼 표시
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    const prompt = e;
+    $('#btn-install').hidden = false;
+    installBox.hidden = false;
+    $('#btn-install').onclick = async () => {
+      prompt.prompt();
+      const { outcome } = await prompt.userChoice;
+      if (outcome === 'accepted') installBox.hidden = true;
+    };
+  });
+}
+window.addEventListener('appinstalled', () => { installBox.hidden = true; });
+
 // 테스트/자동화용
 window.__suseok = { state, render, handleFile, applyMask };

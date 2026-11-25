@@ -161,6 +161,27 @@ body {
   pointer-events: none;
 }
 
+/* 앱 설치 안내 */
+.install-in {
+  max-width: 1180px;
+  margin: 12px auto 0;
+  padding: 12px 14px;
+  margin-left: max(16px, env(safe-area-inset-left, 0px));
+  margin-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+@media (min-width: 1212px) { .install-in { margin-left: auto; margin-right: auto; } }
+.install-in img { border-radius: 10px; flex: none; }
+.install-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; font-size: 13px; color: var(--muted); font-weight: 500; }
+.install-text b { color: var(--fg); font-size: 15px; font-weight: 700; }
+.install-x { background: none; border: 0; color: var(--muted); font-size: 24px; line-height: 1; padding: 6px 8px; cursor: pointer; }
+.share-ico { display: inline-block; vertical-align: -3px; }
+
 /* 누끼 수정 화면 */
 .editor {
   position: fixed;

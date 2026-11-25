@@ -7,7 +7,8 @@ const CDN = 'https://staticimgly.com/@imgly/background-removal-data/1.4.5/dist/'
 let publicPathPromise;
 function getPublicPath() {
   // 같은 폴더에 모델(bgdata)이 있으면 그것을, 없으면 제작사 CDN 을 사용
-  publicPathPromise ??= fetch(new URL('bgdata/resources.json', document.baseURI), { method: 'HEAD' })
+  // (GET 사용: 앱 오프라인 저장소가 이 파일도 보관해서 인터넷 없이도 동작)
+  publicPathPromise ??= fetch(new URL('bgdata/resources.json', document.baseURI))
     .then((r) => (r.ok ? new URL('bgdata/', document.baseURI).href : CDN))
     .catch(() => CDN);
   return publicPathPromise;
