@@ -1,6 +1,8 @@
 import templateUrl from './assets/template.jpg';
 import { renderPoster, ensureFonts, alphaBounds } from './render.js';
 import { loadImageToCanvas, autoMask, composite, MaskEditor } from './cutout.js';
+import { parseQuick } from './parse.js';
+import { translateTitle } from './translate.js';
 
 const $ = (s) => document.querySelector(s);
 const fields = ['title', 'en', 'zh', 'origin', 'size'];
@@ -215,6 +217,11 @@ if (navigator.canShare?.({ files: [new File([''], 'a.png', { type: 'image/png' }
 
 $('#btn-new').addEventListener('click', () => {
   fields.forEach((f) => ($('#' + f).value = ''));
+  $('#quick').value = '';
+  setTrStatus('');
+  tr.token++;
+  tr.enAuto = tr.zhAuto = true;
+  tr.lastTitle = '';
   photoId++; // 진행 중인 누끼 결과는 버림
   state.src = state.mask = state.aiMask = state.cut = state.bounds = null;
   $('#file').value = '';
@@ -223,8 +230,124 @@ $('#btn-new').addEventListener('click', () => {
   if (!editorEl.hidden) closeEditor(false);
   autoGrow();
   schedule();
-  $('#title').focus();
+  $('#quick').focus();
 });
+
+// ---------- 붙여넣기 → 자동 채우기 + 번역 ----------
+const LS = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* 저장 불가 */ } },
+};
+const tr = {
+  token: 0,
+  enAuto: true,   // 사용자가 직접 고치면 false → 자동 번역이 덮어쓰지 않음
+  zhAuto: true,
+  lastTitle: $('#title').value.trim(), // 기본 예시는 이미 번역되어 있음
+  engine: LS.get('trEngine') === 'claude' ? 'claude' : 'google',
+};
+
+function setTrStatus(text, kind = '') {
+  const el = $('#tr-status');
+  el.textContent = text;
+  el.className = `tr-status ${kind}`;
+}
+
+function setField(id, value) {
+  const el = $('#' + id);
+  if (el.value !== value) el.value = value;
+}
+
+// force: 같은 제목이어도 다시 번역 / reset: 직접 고친 칸도 다시 자동으로 덮어씀
+async function runTranslate({ force = false, reset = false } = {}) {
+  const title = $('#title').value.trim();
+  if (reset) tr.enAuto = tr.zhAuto = true;
+  if (!title) {
+    if (tr.enAuto) setField('en', '');
+    if (tr.zhAuto) setField('zh', '');
+    tr.lastTitle = '';
+    setTrStatus('');
+    autoGrow();
+    schedule();
+    return;
+  }
+  if (!force && title === tr.lastTitle) return;
+  if (!tr.enAuto && !tr.zhAuto) return;
+  const token = ++tr.token;
+  setTrStatus('영어·중국어 번역 중…', 'busy');
+  try {
+    const { en, zh } = await translateTitle(title, { engine: tr.engine, apiKey: LS.get('claudeKey') });
+    if (token !== tr.token) return;
+    if (tr.enAuto) setField('en', en);
+    if (tr.zhAuto) setField('zh', zh);
+    tr.lastTitle = title;
+    setTrStatus(`${tr.engine === 'claude' ? 'Claude' : '무료'} 번역 완료 · 어색하면 아래에서 고치거나 다시 번역`, 'ok');
+  } catch (e) {
+    if (token !== tr.token) return;
+    console.error(e);
+    // 이전 수석의 번역이 새 안내판에 남지 않도록 자동으로 채운 칸은 비움
+    if (title !== tr.lastTitle) {
+      if (tr.enAuto) setField('en', '');
+      if (tr.zhAuto) setField('zh', '');
+    }
+    const msg = !navigator.onLine ? '인터넷이 연결되지 않아 번역하지 못했습니다. 영어·중국어는 아래에 직접 입력해 주세요.' : e.message || '번역에 실패했습니다.';
+    setTrStatus(msg, 'error');
+  }
+  autoGrow();
+  schedule();
+}
+
+function applyQuick() {
+  const p = parseQuick($('#quick').value);
+  setField('title', p.title ?? '');
+  setField('origin', p.origin ?? '');
+  setField('size', p.size ?? '');
+  // 붙여넣은 글에 영어:/중국어: 가 있으면 그대로 사용, 없으면 자동 번역
+  tr.enAuto = !p.en;
+  tr.zhAuto = !p.zh;
+  if (p.en) setField('en', p.en);
+  if (p.zh) setField('zh', p.zh);
+  autoGrow();
+  schedule();
+  if (tr.enAuto || tr.zhAuto) runTranslate({ force: (p.title ?? '') !== tr.lastTitle });
+  else { tr.lastTitle = p.title ?? ''; setTrStatus('붙여넣은 영어·중국어 제목을 사용했습니다', 'ok'); }
+}
+
+let quickTimer;
+$('#quick').addEventListener('input', () => {
+  clearTimeout(quickTimer);
+  quickTimer = setTimeout(applyQuick, 600);
+});
+// 붙여넣기는 바로 처리
+$('#quick').addEventListener('paste', () => setTimeout(() => { clearTimeout(quickTimer); applyQuick(); }, 0));
+
+let titleTimer;
+$('#title').addEventListener('input', () => {
+  clearTimeout(titleTimer);
+  titleTimer = setTimeout(() => runTranslate(), 900);
+});
+$('#en').addEventListener('input', () => { tr.enAuto = false; });
+$('#zh').addEventListener('input', () => { tr.zhAuto = false; });
+$('#btn-retranslate').addEventListener('click', () => runTranslate({ force: true, reset: true }));
+
+// 번역 설정
+const keyInput = $('#api-key');
+function syncEngineUI() {
+  const isClaude = tr.engine === 'claude';
+  $('#key-field').hidden = !isClaude;
+  $('#key-help').hidden = !isClaude;
+  document.querySelectorAll('input[name="engine"]').forEach((r) => (r.checked = r.value === tr.engine));
+}
+keyInput.value = LS.get('claudeKey') ?? '';
+syncEngineUI();
+document.querySelectorAll('input[name="engine"]').forEach((r) =>
+  r.addEventListener('change', () => {
+    tr.engine = r.value;
+    LS.set('trEngine', tr.engine);
+    syncEngineUI();
+    if (tr.engine === 'claude' && !keyInput.value) keyInput.focus();
+  }),
+);
+keyInput.addEventListener('change', () => LS.set('claudeKey', keyInput.value.trim() || null));
 
 // ---------- 입력 ----------
 fields.forEach((f) => $('#' + f).addEventListener('input', schedule));

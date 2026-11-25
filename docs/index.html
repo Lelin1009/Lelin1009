@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@500&display=swap" />
-  <script type="module" crossorigin src="./assets/index-CiVng0Ak.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-DK2T0108.css">
+  <script type="module" crossorigin src="./assets/index-BmVtIE_f.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DPIkFLNW.css">
 </head>
 <body>
   <header class="top">
@@ -58,7 +58,33 @@
       </div>
 
       <div class="group">
-        <h2>2. 이름</h2>
+        <h2>2. 글 붙여넣기</h2>
+        <label class="field">
+          <span>이름·산지·규격을 그대로 붙여넣으세요 <em>영어·중국어는 자동 번역</em></span>
+          <textarea id="quick" rows="3" autocomplete="off" spellcheck="false" placeholder="안개낀 첩첩산중&#10;산지:한국&#10;규격:380*370*140">안개낀 첩첩산중
+산지:한국
+규격:380*370*140</textarea>
+        </label>
+        <div class="tr-row">
+          <span class="tr-status" id="tr-status" aria-live="polite"></span>
+          <button type="button" class="btn small" id="btn-retranslate">다시 번역</button>
+        </div>
+        <details class="settings" id="tr-settings">
+          <summary>번역 설정</summary>
+          <div class="settings-body">
+            <label class="radio"><input type="radio" name="engine" value="google" checked /> <span><b>무료 번역</b> · 설정 없이 바로 사용 (Google 번역)</span></label>
+            <label class="radio"><input type="radio" name="engine" value="claude" /> <span><b>Claude AI 번역</b> · 더 자연스러운 전시 제목. API 키 필요, 한 번에 약 10원</span></label>
+            <label class="field" id="key-field" hidden>
+              <span>Claude API 키 <em>이 기기에만 저장됩니다</em></span>
+              <input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…" />
+            </label>
+            <p class="hint" id="key-help" hidden>키는 console.anthropic.com 에 가입한 뒤 Settings → API Keys에서 만들 수 있어요. 결제 수단을 등록해야 작동합니다.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="group">
+        <h2>3. 자동으로 채워진 내용 <em class="h2-sub">틀린 곳은 여기서 고치세요</em></h2>
         <label class="field">
           <span>한국어 제목 <em>크게</em></span>
           <input id="title" type="text" autocomplete="off" value="안개낀 첩첩산중" />
@@ -71,11 +97,6 @@
           <span>중국어 제목 <em>작게</em></span>
           <textarea id="zh" rows="1" autocomplete="off">云雾缭绕的重峦叠嶂</textarea>
         </label>
-        <p class="hint">영어와 중국어는 <b>English / 中文</b> 한 줄로 들어가고, 길면 자동으로 여러 줄로 나뉩니다. 원하는 곳에서 줄을 바꾸려면 Enter를 누르세요. 글자는 정해진 구역 안에서만 작아지고 사진 영역은 침범하지 않습니다.</p>
-      </div>
-
-      <div class="group">
-        <h2>3. 정보</h2>
         <div class="two">
           <label class="field">
             <span>산지</span>
@@ -86,6 +107,7 @@
             <input id="size" type="text" inputmode="text" autocomplete="off" value="380*370*140" />
           </label>
         </div>
+        <p class="hint">영어와 중국어는 <b>English / 中文</b> 한 줄로 들어가고, 길면 자동으로 여러 줄로 나뉩니다. 원하는 곳에서 줄을 바꾸려면 Enter를 누르세요. 글자는 정해진 구역 안에서만 작아지고 사진 영역은 침범하지 않습니다.</p>
       </div>
 
       <div class="group">
