@@ -2,7 +2,7 @@ import templateUrl from './assets/template.jpg';
 import { renderPoster, ensureFonts, alphaBounds } from './render.js';
 import { loadImageToCanvas, autoMask, composite, MaskEditor } from './cutout.js';
 import { parseQuick } from './parse.js';
-import { translateTitle } from './translate.js';
+import { translateTitle, forgetGeminiModel } from './translate.js';
 
 const $ = (s) => document.querySelector(s);
 const fields = ['title', 'en', 'zh', 'origin', 'size'];
@@ -243,7 +243,7 @@ const tr = {
   enAuto: true,   // 사용자가 직접 고치면 false → 자동 번역이 덮어쓰지 않음
   zhAuto: true,
   lastTitle: $('#title').value.trim(), // 기본 예시는 이미 번역되어 있음
-  engine: LS.get('trEngine') === 'claude' ? 'claude' : 'google',
+  engine: LS.get('trEngine') === 'gemini' ? 'gemini' : 'google',
 };
 
 function setTrStatus(text, kind = '') {
@@ -275,12 +275,12 @@ async function runTranslate({ force = false, reset = false } = {}) {
   const token = ++tr.token;
   setTrStatus('영어·중국어 번역 중…', 'busy');
   try {
-    const { en, zh } = await translateTitle(title, { engine: tr.engine, apiKey: LS.get('claudeKey') });
+    const { en, zh } = await translateTitle(title, { engine: tr.engine, apiKey: LS.get('geminiKey') });
     if (token !== tr.token) return;
     if (tr.enAuto) setField('en', en);
     if (tr.zhAuto) setField('zh', zh);
     tr.lastTitle = title;
-    setTrStatus(`${tr.engine === 'claude' ? 'Claude' : '무료'} 번역 완료 · 어색하면 아래에서 고치거나 다시 번역`, 'ok');
+    setTrStatus(`${tr.engine === 'gemini' ? 'Gemini' : '무료'} 번역 완료 · 어색하면 아래에서 고치거나 다시 번역`, 'ok');
   } catch (e) {
     if (token !== tr.token) return;
     console.error(e);
@@ -332,22 +332,27 @@ $('#btn-retranslate').addEventListener('click', () => runTranslate({ force: true
 // 번역 설정
 const keyInput = $('#api-key');
 function syncEngineUI() {
-  const isClaude = tr.engine === 'claude';
-  $('#key-field').hidden = !isClaude;
-  $('#key-help').hidden = !isClaude;
+  const isGemini = tr.engine === 'gemini';
+  $('#key-field').hidden = !isGemini;
+  $('#key-help').hidden = !isGemini;
   document.querySelectorAll('input[name="engine"]').forEach((r) => (r.checked = r.value === tr.engine));
 }
-keyInput.value = LS.get('claudeKey') ?? '';
+LS.set('claudeKey', null); // 이전 버전에서 저장한 키 정리
+keyInput.value = LS.get('geminiKey') ?? '';
 syncEngineUI();
 document.querySelectorAll('input[name="engine"]').forEach((r) =>
   r.addEventListener('change', () => {
     tr.engine = r.value;
     LS.set('trEngine', tr.engine);
     syncEngineUI();
-    if (tr.engine === 'claude' && !keyInput.value) keyInput.focus();
+    if (tr.engine === 'gemini' && !keyInput.value) keyInput.focus();
   }),
 );
-keyInput.addEventListener('change', () => LS.set('claudeKey', keyInput.value.trim() || null));
+keyInput.addEventListener('change', () => {
+  LS.set('geminiKey', keyInput.value.trim() || null);
+  forgetGeminiModel(); // 키가 바뀌면 쓸 수 있는 모델도 다시 확인
+  if (tr.engine === 'gemini' && keyInput.value.trim() && $('#title').value.trim()) runTranslate({ force: true });
+});
 
 // ---------- 입력 ----------
 fields.forEach((f) => $('#' + f).addEventListener('input', schedule));
