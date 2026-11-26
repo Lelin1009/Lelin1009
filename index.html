@@ -21,7 +21,7 @@
   <header class="top">
     <div class="top-in">
       <h1>수석 안내판 제작기</h1>
-      <p>순천세계수석박물관 · 1200 × 1800</p>
+      <p>순천세계수석박물관</p>
     </div>
   </header>
 
@@ -39,6 +39,20 @@
 
   <main class="layout">
     <section class="panel" aria-label="입력">
+      <div class="group">
+        <h2>안내판 모양</h2>
+        <div class="layout-switch" id="layout-switch" role="group" aria-label="안내판 모양">
+          <button type="button" data-layout="large" class="on" aria-pressed="true">
+            <span class="ls-icon ls-tall" aria-hidden="true"></span>
+            <span><b>큰 사진</b><small>세로 1200×1800</small></span>
+          </button>
+          <button type="button" data-layout="small" aria-pressed="false">
+            <span class="ls-icon ls-wide" aria-hidden="true"></span>
+            <span><b>작은 사진</b><small>인쇄용 · 긴 제목</small></span>
+          </button>
+        </div>
+        <p class="hint" id="layout-note"></p>
+      </div>
       <div class="group">
         <h2>1. 사진</h2>
         <label class="drop" id="drop">
@@ -124,6 +138,10 @@
       <div class="poster-wrap">
         <canvas id="poster" width="1200" height="1800"></canvas>
         <div class="empty" id="empty">사진을 선택하면 여기에 수석이 들어갑니다</div>
+      </div>
+      <div class="sheet-row" id="sheet-row" hidden>
+        <span>저장 파일은 절취선이 포함된 1800×1200 인쇄용입니다</span>
+        <button type="button" class="btn small" id="btn-sheet" aria-pressed="false">전체 용지 보기</button>
       </div>
     </section>
   </main>

@@ -1,4 +1,5 @@
 import templateUrl from './assets/template.jpg';
+import templateSmallUrl from './assets/template-small.png';
 import { renderPoster, ensureFonts, alphaBounds } from './render.js';
 import { loadImageToCanvas, autoMask, composite, MaskEditor } from './cutout.js';
 import { parseQuick } from './parse.js';
@@ -8,6 +9,8 @@ const $ = (s) => document.querySelector(s);
 const fields = ['title', 'en', 'zh', 'origin', 'size'];
 
 const state = {
+  layout: (() => { try { return localStorage.getItem('layout') === 'small' ? 'small' : 'large'; } catch { return 'large'; } })(),
+  templates: {},  // { large, small }
   template: null,
   src: null,      // 원본(축소된) 사진
   mask: null,     // 누끼 마스크
@@ -27,7 +30,8 @@ async function render() {
   if (token !== renderToken) return;
   renderPoster(poster, {
     ...data,
-    template: state.template,
+    layout: state.layout,
+    template: state.templates[state.layout],
     photo: state.cut ?? state.src,
     bounds: state.cut ? state.bounds : null,
     showZones: $('#zones').checked,
@@ -185,7 +189,8 @@ async function exportBlob() {
   const out = document.createElement('canvas');
   renderPoster(out, {
     ...readFields(),
-    template: state.template,
+    layout: state.layout,
+    template: state.templates[state.layout],
     photo: state.cut ?? state.src,
     bounds: state.cut ? state.bounds : null,
     showZones: false,
@@ -381,8 +386,39 @@ document.querySelectorAll('textarea').forEach((t) => t.addEventListener('input',
 
 // ---------- 시작 ----------
 const tpl = new Image();
-tpl.onload = () => { state.template = tpl; schedule(); };
+tpl.onload = () => { state.templates.large = tpl; schedule(); };
 tpl.src = templateUrl;
+const tplSmall = new Image();
+tplSmall.onload = () => { state.templates.small = tplSmall; schedule(); };
+tplSmall.src = templateSmallUrl;
+
+// ---------- 큰 사진 / 작은 사진 전환 ----------
+function setLayout(layout) {
+  state.layout = layout;
+  try { localStorage.setItem('layout', layout); } catch { /* 저장 불가 */ }
+  document.querySelectorAll('#layout-switch button').forEach((b) => {
+    const on = b.dataset.layout === layout;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+  $('.poster-wrap').classList.toggle('small', layout === 'small');
+  $('#sheet-row').hidden = layout !== 'small';
+  $('#layout-note').textContent = layout === 'small'
+    ? '1800×1200 인쇄용 · 흰 절취선을 따라 왼쪽 아래 칸을 자르세요. 중국어·영어는 각자 줄로 들어갑니다.'
+    : '1200×1800 세로 · 영어와 중국어는 English / 中文 한 줄로 들어갑니다.';
+  schedule();
+}
+document.querySelectorAll('#layout-switch button').forEach((b) => b.addEventListener('click', () => setLayout(b.dataset.layout)));
+// 작은 사진형 미리보기: 안내판 칸만 / 전체 용지
+let sheetView = false;
+function syncSheetView() {
+  $('.poster-wrap').classList.toggle('crop', !sheetView);
+  $('#btn-sheet').textContent = sheetView ? '안내판만 크게 보기' : '전체 용지 보기';
+  $('#btn-sheet').setAttribute('aria-pressed', String(sheetView));
+}
+$('#btn-sheet').addEventListener('click', () => { sheetView = !sheetView; syncSheetView(); });
+syncSheetView();
+setLayout(state.layout);
 autoGrow();
 schedule();
 document.fonts.ready.then(schedule);
